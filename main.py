@@ -10,7 +10,7 @@ from yt_dlp import YoutubeDL
 
 
 CWD = Path.cwd()
-ALD = Path(__file__)
+ALD = Path(__file__).parent
 UPDATE_INTERVAL_DAYS = 7
 DEFAULT_SUBTITLE_LANGS = ['ru', 'en']
 
