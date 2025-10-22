@@ -6,6 +6,7 @@ dist/
 wheels/
 *.egg-info
 last_updated.txt
+GetYTModule.psm1
 
 # Virtual environments
 .venv
