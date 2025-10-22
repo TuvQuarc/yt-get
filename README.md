@@ -11,6 +11,7 @@ A simple wrapper around `yt-dlp` for downloading YouTube videos and playlists wi
 - Geo-bypass support (though YouTube typically ignores this argument)
 - Automatic `yt-dlp` updates (weekly check)
 - Organized output: playlists saved in separate folders
+- Cookie file support for accessing restricted content
 
 ## Requirements
 
@@ -82,12 +83,19 @@ uv run yt-get.py -g US "https://www.youtube.com/watch?v=VIDEO_ID"
 uv run yt-get.py -u
 ```
 
+### Use cookies for restricted content
+
+```bash
+uv run yt-get.py -c cookies.txt "https://www.youtube.com/watch?v=VIDEO_ID"
+```
+
 ## Options
 
 - `-a`, `--audio-only` - Download only audio
 - `-i`, `--input-file FILE` - Read URLs from file
 - `-u`, `--update` - Update embedded yt-dlp before downloading
 - `-g`, `--geo-bypass CODE` - Geo-bypass country code (two-letter ISO 3166-2)
+- `-c`, `--cookie-file FILE` - Use cookies from file (Netscape format)
 
 ## Output Format
 

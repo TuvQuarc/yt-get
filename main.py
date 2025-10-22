@@ -1,16 +1,16 @@
 from argparse import ArgumentParser
 
 from urllib.parse import urlparse, parse_qsl, urlunparse, urlencode
-import os
 import sys
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 from yt_dlp import YoutubeDL
 
 
-CWD = os.getcwd()
-ALD = os.path.dirname(os.path.abspath(__file__))
+CWD = Path.cwd()
+ALD = Path(__file__)
 UPDATE_INTERVAL_DAYS = 7
 DEFAULT_SUBTITLE_LANGS = ['ru', 'en']
 
@@ -25,7 +25,7 @@ def update_ytdlp() -> None:
 
 
 def write_last_updated_now() -> None:
-    luf = os.path.join(ALD, 'last_updated.txt')
+    luf = Path(ALD) / 'last_updated.txt'
     try:
         with open(luf, 'w') as f:
             f.write(f'{datetime.now(timezone.utc).isoformat()}')
@@ -35,7 +35,7 @@ def write_last_updated_now() -> None:
 
 def read_last_updated() -> datetime | None:
     try:
-        with open(os.path.join(ALD, 'last_updated.txt'), 'r') as f:
+        with open(Path(ALD) / 'last_updated.txt', 'r') as f:
             last_updated = f.read()
         return datetime.fromisoformat(last_updated)
     except OSError, ValueError:
@@ -60,6 +60,7 @@ def parse_arguments() -> ArgumentParser:
 
     parser.add_argument('urls', nargs='*', type=str, help='one or more URLs of the videos or playlists')
     parser.add_argument('-a', '--audio-only', action='store_true', help='only download audio')
+    parser.add_argument('-c', '--cookie-file', dest='cookie_file', type=str, help='file with cookies')
     parser.add_argument('-i', '--input-file', dest='input_file', type=str, help='file with URLs of the videos or playlists')
     parser.add_argument('-u', '--update', action='store_true', help='update embedded `yt-dlp` before other tasks')
     parser.add_argument('-g', '--geo-bypass', dest='geo_code', type=str, help='geo-bypass country code (two-letter ISO 3166-2 country code)')
@@ -110,7 +111,7 @@ def is_playlist_url(url: str) -> bool:
         return False
 
 
-def download(url: str, audio_only: bool=False, geo_bypass: str | None=None) -> None:
+def download(url: str, audio_only: bool=False, geo_bypass: str | None=None, cookie_file: str | None = None) -> None:
     default_args = {
         'ignoreerrors': 'only_download',
         'overwrites': False,
@@ -122,6 +123,9 @@ def download(url: str, audio_only: bool=False, geo_bypass: str | None=None) -> N
     }
     if geo_bypass:
         default_args['geo_bypass_country'] = geo_bypass
+    
+    if cookie_file:
+        default_args['cookiefile'] = cookie_file
 
     video_args = {
         'subtitleslangs': DEFAULT_SUBTITLE_LANGS,
@@ -206,8 +210,10 @@ if __name__ == '__main__':
                 urls.append(fix_url(url))
         
         if args.input_file:
+            path = Path(args.input_file)
+            input_file = path.resolve() if path.is_absolute() else (CWD / path).resolve()
             try:
-                with open(args.input_file, 'r', encoding='utf-8') as f:
+                with open(input_file, 'r', encoding='utf-8') as f:
                     for line_num, url in enumerate(f, 1):
                         url = url.strip()
                         if not url or url[0] in '#;':
@@ -217,7 +223,7 @@ if __name__ == '__main__':
                         except ValueError as e:
                             print(f'Warning: Skipping invalid URL on line {line_num}: {e}', file=sys.stderr)
             except OSError as e:
-                print(f'Error: Failed to read input file `{args.input_file}`: {e}', file=sys.stderr)
+                print(f'Error: Failed to read input file `{input_file}`: {e}', file=sys.stderr)
                 if len(urls) == 0:
                     sys.exit(1)
                 else:
@@ -227,12 +233,18 @@ if __name__ == '__main__':
             print('Error: Geo-bypass country code must be a two-letter ISO 3166-2 code', file=sys.stderr)
             sys.exit(1)
 
+        geo_code = None
         if args.geo_code:
-            for url in urls:
-                download(url, args.audio_only, args.geo_code)
-        else:
-            for url in urls:
-                download(url, args.audio_only)
+            geo_code = args.geo_code.upper()
+        
+        cookie_file = None
+        if args.cookie_file:
+            path = Path(args.cookie_file)
+            cookie_file = path.resolve() if path.is_absolute() else (CWD / path).resolve()
+
+        for url in urls:
+            download(url=url, audio_only=args.audio_only, geo_bypass=args.geo_code, cookie_file=cookie_file)
+        
     except KeyboardInterrupt:
         print('\nDownload cancelled by user', file=sys.stderr)
         sys.exit(130)
