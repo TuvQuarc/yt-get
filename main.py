@@ -18,7 +18,7 @@ DEFAULT_SUBTITLE_LANGS = ['ru', 'en']
 def update_ytdlp() -> None:
     try:
         print('Start update for embedded `yt-dlp`...')
-        subprocess.run('uv add yt-dlp --upgrade --native-tls', shell=True, check=True)
+        subprocess.run(f'uv --project {ALD} add yt-dlp --upgrade --native-tls', shell=True, check=True)
         write_last_updated_now()
     except subprocess.CalledProcessError as e:
         print(f'Error: Failed to update yt-dlp: {e}', file=sys.stderr)
